@@ -10,13 +10,13 @@
 	</parent>
 
 	<groupId>com.redhat.ukiservices.bh</groupId>
-	<artifactId>vertx-example</artifactId>
+	<artifactId>vertx-rest-amqp-example</artifactId>
 
 	<version>1.0.0-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
-	<name>Vert.x - Health Checks</name>
-	<description>Demonstrates health check probes using Vert.x</description>
+	<name>Vert.x - REST to AMQP Bridging Example</name>
+	<description>Demonstrates how to create a bridge between a RESTful web service, and an AMQP Broker</description>
 
 	<properties>
 		<vertx.version>3.4.1</vertx.version>
