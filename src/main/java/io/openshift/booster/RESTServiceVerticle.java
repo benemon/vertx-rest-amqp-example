@@ -65,17 +65,16 @@ public class RESTServiceVerticle extends AbstractVerticle {
 
 		bridge.start(amqBrokerHost, amqBrokerPort, amqBrokerUsername, amqBrokerPassword, res -> {
 
-			online = res.succeeded() == true && online == true ? true : false; 
+			online = res.succeeded() == true && online == true ? true : false;
 			log.info(String.format(BRIDGE_STARTED, amqBrokerHost, amqBrokerPort, res.succeeded()));
-			
+
 		});
 
 		server = vertx.createHttpServer().requestHandler(router::accept).listen(config().getInteger("http.port", 8080),
 				ar -> {
-					online = ar.succeeded() == true && online == true ? true : false; 
+					online = ar.succeeded() == true && online == true ? true : false;
 					future.handle(ar.mapEmpty());
 				});
-
 	}
 
 	/**
