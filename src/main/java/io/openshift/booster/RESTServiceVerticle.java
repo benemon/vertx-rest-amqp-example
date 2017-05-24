@@ -56,7 +56,7 @@ public class RESTServiceVerticle extends AbstractVerticle {
 	}
 
 	@Override
-	public void start(Future<Void> future) throws Exception {
+	public void start() throws Exception {
 		Router router = Router.router(vertx);
 		bridge = AmqpBridge.create(vertx);
 
