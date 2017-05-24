@@ -24,7 +24,8 @@ public class RESTServiceVerticle extends AbstractVerticle {
 	private static final int AMQP_PORT = 5672;
 	private static final String AMQP_DEFAULT_ADDRESS = "aTopic";
 
-	private static final String BRIDGE_STARTED = "Bridge Status: %s:%d %B";
+	private static final String BRIDGE_STATUS = "AMQP Bridge Status: %s";
+	private static final String REST_STATUS = "REST API Status: %s";
 	private static final String OK = "OK";
 	private static final String NOT_OK = "Not OK";
 	private static final String SENT = "Sent: \n %s";
@@ -35,9 +36,13 @@ public class RESTServiceVerticle extends AbstractVerticle {
 	private String amqBrokerPassword;
 	private String amqBrokerAddress;
 
-	private boolean online = true;
+	private boolean amqpOnline = false;
+	private boolean restOnline = false;
+	private boolean status = false;
+
 	private HttpServer server;
 	private AmqpBridge bridge;
+	MessageProducer<JsonObject> producer = null;
 
 	public RESTServiceVerticle() {
 		amqBrokerHost = System.getenv(CommonConstants.AMQP_BROKER_HOST_ENV) != null
@@ -57,24 +62,39 @@ public class RESTServiceVerticle extends AbstractVerticle {
 		bridge = AmqpBridge.create(vertx);
 
 		HealthCheckHandler healthCheckHandler = HealthCheckHandler.create(vertx).register("server-online",
-				fut -> fut.complete(online ? Status.OK() : Status.KO()));
+				fut -> fut.complete(((amqpOnline) && (restOnline) == true) ? Status.OK() : Status.KO()));
 
-		router.get("/api/health/readiness").handler(rc -> rc.response().end("OK"));
+		router.get("/api/health/readiness").handler(rc -> rc.response().end(OK));
 		router.get("/api/health/liveness").handler(healthCheckHandler);
 		router.get("/api/publish").handler(this::publishData);
 
-		bridge.start(amqBrokerHost, amqBrokerPort, amqBrokerUsername, amqBrokerPassword, res -> {
+		server = vertx.createHttpServer().requestHandler(router::accept).listen(config().getInteger("http.port", 8080),
+				ar -> {
+					if (ar.succeeded()) {
+						log.info(String.format(REST_STATUS, OK));
+						restOnline = ar.succeeded();
+					} else {
+						log.error(String.format(REST_STATUS, ar.cause().getMessage()));
+					}
+				});
 
-			online = res.succeeded() == true && online == true ? true : false;
-			log.info(String.format(BRIDGE_STARTED, amqBrokerHost, amqBrokerPort, res.succeeded()));
+		bridge.start(amqBrokerHost, amqBrokerPort, amqBrokerUsername, amqBrokerPassword, res -> {
+			if (res.succeeded()) {
+
+				amqpOnline = res.succeeded();
+				// Set up a producer using the bridge
+				producer = bridge.createProducer(amqBrokerAddress);
+
+				log.info(String.format(BRIDGE_STATUS, OK));
+
+			} else {
+
+				log.error(String.format(BRIDGE_STATUS, res.cause().getMessage()));
+
+			}
 
 		});
 
-		server = vertx.createHttpServer().requestHandler(router::accept).listen(config().getInteger("http.port", 8080),
-				ar -> {
-					online = ar.succeeded() == true && online == true ? true : false;
-					future.handle(ar.mapEmpty());
-				});
 	}
 
 	/**
@@ -83,21 +103,14 @@ public class RESTServiceVerticle extends AbstractVerticle {
 	 * @param rc
 	 */
 	private void publishData(RoutingContext rc) {
-		if (!online) {
+		if (!status) {
 			this.error(rc, NOT_OK);
 			return;
 		}
 
 		String data = rc.request().getParam("data");
 
-		MessageProducer<JsonObject> producer = null;
-
-		log.info("Creating Producer");
-
 		try {
-
-			// Set up a producer using the bridge, send a message with it.
-			producer = bridge.createProducer(amqBrokerAddress);
 
 			JsonObject amqpMsgPayload = new JsonObject();
 			amqpMsgPayload.put("body", data);
@@ -112,10 +125,6 @@ public class RESTServiceVerticle extends AbstractVerticle {
 
 			log.error("Oops", e1);
 			this.error(rc, e1.getMessage());
-
-		} finally {
-			log.info("Closing Producer");
-			producer.close();
 
 		}
 	}
