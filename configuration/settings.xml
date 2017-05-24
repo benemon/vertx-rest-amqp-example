@@ -23,13 +23,13 @@
 						</snapshots>
 						<id>central</id>
 						<name>red-hat-all</name>
-						<url>http://nexus-cicd.apps.openshift.studio/repository/red-hat-all/</url>
+						<url>http://nexus:8081/repository/red-hat-all/</url>
 					</repository>
 					<repository>
 						<snapshots />
 						<id>snapshots</id>
 						<name>red-hat-all</name>
-						<url>http://nexus-cicd.apps.openshift.studio/repository/red-hat-all/</url>
+						<url>http://nexus:8081/repository/red-hat-all/</url>
 					</repository>
 			<!--
 				<repository>
