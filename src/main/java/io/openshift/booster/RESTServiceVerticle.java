@@ -38,7 +38,6 @@ public class RESTServiceVerticle extends AbstractVerticle {
 
 	private boolean amqpOnline = false;
 	private boolean restOnline = false;
-	private boolean status = false;
 
 	private HttpServer server;
 	private AmqpBridge bridge;
@@ -62,7 +61,7 @@ public class RESTServiceVerticle extends AbstractVerticle {
 		bridge = AmqpBridge.create(vertx);
 
 		HealthCheckHandler healthCheckHandler = HealthCheckHandler.create(vertx).register("server-online",
-				fut -> fut.complete(((amqpOnline) && (restOnline) == true) ? Status.OK() : Status.KO()));
+				fut -> fut.complete(((amqpOnline && restOnline) == true) ? Status.OK() : Status.KO()));
 
 		router.get("/api/health/readiness").handler(rc -> rc.response().end(OK));
 		router.get("/api/health/liveness").handler(healthCheckHandler);
@@ -103,7 +102,7 @@ public class RESTServiceVerticle extends AbstractVerticle {
 	 * @param rc
 	 */
 	private void publishData(RoutingContext rc) {
-		if (!status) {
+		if ((restOnline && amqpOnline) != true) {
 			this.error(rc, NOT_OK);
 			return;
 		}
