@@ -1,37 +1,28 @@
 <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
-      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-      xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
                           http://maven.apache.org/xsd/settings-1.0.0.xsd">
-<!--    
-   <proxies>
-	  <proxy>
-		 <id>squid-proxy</id>
-		 <active>true</active>
-		 <protocol>http</protocol>
-		 <host>192.168.1.5</host>
-		 <port>3128</port>
-	   </proxy>
-  </proxies>
--->
-	  <profiles>
+	<!-- <proxies> <proxy> <id>squid-proxy</id> <active>true</active> <protocol>http</protocol> 
+		<host>192.168.1.5</host> <port>3128</port> </proxy> </proxies> -->
+	<profiles>
 		<profile>
 			<id>build.repos</id>
-				<repositories>
-					<repository>
-						<snapshots>
+			<repositories>
+				<repository>
+					<snapshots>
 						<enabled>false</enabled>
-						</snapshots>
-						<id>central</id>
-						<name>red-hat-all</name>
-						<url>http://nexus.default.svc.cluster.local:8081/repository/red-hat-all/</url>
-					</repository>
-					<repository>
-						<snapshots />
-						<id>snapshots</id>
-						<name>red-hat-all</name>
-						<url>http://nexus.default.svc.cluster.local:8081/repository/red-hat-all/</url>
-					</repository>
-			<!--
+					</snapshots>
+					<id>central</id>
+					<name>red-hat-all</name>
+					<url>http://nexus.default.svc.cluster.local:8081/repository/red-hat-all/</url>
+				</repository>
+				<repository>
+					<snapshots />
+					<id>snapshots</id>
+					<name>red-hat-all</name>
+					<url>http://nexus.default.svc.cluster.local:8081/repository/red-hat-all/</url>
+				</repository>
+
 				<repository>
 					<id>fusesource.m2</id>
 					<name>FuseSource Community Release Repository</name>
@@ -81,6 +72,28 @@
 					</releases>
 				</repository>
 				<repository>
+					<id>jboss-ga-repository</id>
+					<name>JBoss GA</name>
+					<url>https://maven.repository.redhat.com/ga</url>
+					<releases>
+						<enabled>true</enabled>
+					</releases>
+					<snapshots>
+						<enabled>false</enabled>
+					</snapshots>
+				</repository>
+				<repository>
+					<id>jboss-earlyaccess-repository</id>
+					<name>JBoss EA</name>
+					<url>https://maven.repository.redhat.com/earlyaccess/all/</url>
+					<releases>
+						<enabled>true</enabled>
+					</releases>
+					<snapshots>
+						<enabled>false</enabled>
+					</snapshots>
+				</repository>
+				<repository>
 					<id>central</id>
 					<name>Maven Central</name>
 					<url>http://uk.maven.org/maven2</url>
@@ -92,24 +105,24 @@
 						<updatePolicy>never</updatePolicy>
 					</releases>
 				</repository>
-				-->
+
 			</repositories>
 			<pluginRepositories>
-					<pluginRepository>
-						<snapshots>
+				<pluginRepository>
+					<snapshots>
 						<enabled>false</enabled>
-						</snapshots>
-						<id>central</id>
-						<name>redhat-all</name>
-						<url>http://nexus.default.svc.cluster.local:8081/repository/red-hat-all/</url>
-					</pluginRepository>
-					<pluginRepository>
-						<snapshots />
-						<id>snapshots</id>
-						<name>redhat-all</name>
-						<url>http://nexus.default.svc.cluster.local:8081/repository/red-hat-all/</url>
-					</pluginRepository>
-			<!--
+					</snapshots>
+					<id>central</id>
+					<name>redhat-all</name>
+					<url>http://nexus.default.svc.cluster.local:8081/repository/red-hat-all/</url>
+				</pluginRepository>
+				<pluginRepository>
+					<snapshots />
+					<id>snapshots</id>
+					<name>redhat-all</name>
+					<url>http://nexus.default.svc.cluster.local:8081/repository/red-hat-all/</url>
+				</pluginRepository>
+
 				<pluginRepository>
 					<id>fusesource.m2</id>
 					<name>FuseSource Community Release Repository</name>
@@ -159,6 +172,28 @@
 					</releases>
 				</pluginRepository>
 				<pluginRepository>
+					<id>jboss-ga-repository</id>
+					<name>JBoss GA</name>
+					<url>https://maven.repository.redhat.com/ga</url>
+					<releases>
+						<enabled>true</enabled>
+					</releases>
+					<snapshots>
+						<enabled>false</enabled>
+					</snapshots>
+				</pluginRepository>
+				<pluginRepository>
+					<id>jboss-earlyaccess-repository</id>
+					<name>JBoss EA</name>
+					<url>https://maven.repository.redhat.com/earlyaccess/all/</url>
+					<releases>
+						<enabled>true</enabled>
+					</releases>
+					<snapshots>
+						<enabled>false</enabled>
+					</snapshots>
+				</pluginRepository>
+				<pluginRepository>
 					<id>central</id>
 					<name>Maven Central</name>
 					<url>http://uk.maven.org/maven2</url>
@@ -170,7 +205,7 @@
 						<updatePolicy>never</updatePolicy>
 					</releases>
 				</pluginRepository>
-				-->
+
 			</pluginRepositories>
 		</profile>
 	</profiles>

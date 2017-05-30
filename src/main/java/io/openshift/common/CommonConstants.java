@@ -8,7 +8,4 @@ public interface CommonConstants {
 	public static final String AMQP_BROKER_PORT_ENV = "BROKER_AMQ_AMQP_SERVICE_PORT";
 	
 	public static final String AMQP_BROKER_ADDRESS_ENV = "BROKER_AMQ_AMQP_SERVICE_ADDRESS";
-	
-	
-
 }
