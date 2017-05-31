@@ -14,13 +14,12 @@ import javax.jms.TextMessage;
 import javax.naming.Context;
 import javax.naming.NamingException;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import io.openshift.common.CommonConstants;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 
 public class AMQProducerVerticle extends AbstractVerticle {
 	private static final Logger log = LoggerFactory.getLogger("AMQProducerVerticle");
@@ -29,7 +28,7 @@ public class AMQProducerVerticle extends AbstractVerticle {
 	private static final int AMQP_DEFAULT_PORT = 5672;
 	private static final String AMQP_DEFAULT_ADDRESS = "aTopic";
 
-	private static final String SENT = "Sent: \n %s";
+	private static final String SENT = "Sent: %s";
 
 	private String amqBrokerHost;
 	private int amqBrokerPort;
@@ -37,7 +36,7 @@ public class AMQProducerVerticle extends AbstractVerticle {
 	private String amqBrokerPassword;
 	private String amqBrokerAddress;
 
-	private static final int DELIVERY_MODE = DeliveryMode.PERSISTENT;
+	private static final int DELIVERY_MODE = DeliveryMode.NON_PERSISTENT;
 
 	private Context context;
 
@@ -66,7 +65,8 @@ public class AMQProducerVerticle extends AbstractVerticle {
 		Hashtable<Object, Object> env = new Hashtable<Object, Object>();
 		env.put(Context.INITIAL_CONTEXT_FACTORY, "org.apache.qpid.jms.jndi.JmsInitialContextFactory");
 		env.put("connectionfactory.amqBrokerLookup", "amqp://" + amqBrokerHost + ":" + amqBrokerPort);
-		env.put("queue.liveDataLookup", amqBrokerAddress);
+		env.put("queue.dataLookup", amqBrokerAddress);
+		env.put("topic.liveDataLookup", amqBrokerAddress);
 
 		try {
 			context = new javax.naming.InitialContext(env);
@@ -74,9 +74,11 @@ public class AMQProducerVerticle extends AbstractVerticle {
 			log.error("Oops", e);
 		}
 
-		MessageConsumer<JsonObject> ebConsumer = vertx.eventBus().consumer("dataStream");
+		MessageConsumer<JsonObject> ebConsumer = vertx.eventBus().consumer(CommonConstants.VERTX_EVENTBUS_DATA_ADDRESS);
 
 		ebConsumer.handler(payload -> {
+
+			log.info("Message received from event bus");
 
 			ConnectionFactory factory = null;
 			Connection connection = null;

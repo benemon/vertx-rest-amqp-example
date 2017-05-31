@@ -2,9 +2,10 @@ package io.openshift.booster.service;
 
 import static io.vertx.core.http.HttpHeaders.CONTENT_TYPE;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 
+import io.openshift.common.CommonConstants;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.json.JsonObject;
@@ -19,11 +20,8 @@ public class RESTServiceVerticle extends AbstractVerticle {
 	private static final String REST_STATUS = "REST API Status: %s";
 	private static final String OK = "OK";
 	private static final String NOT_OK = "Not OK";
-	private static final String SENT = "Sent: \n %s";
 
 	private boolean restOnline = false;
-
-	private HttpServer server;
 
 	@Override
 	public void start() throws Exception {
@@ -37,8 +35,8 @@ public class RESTServiceVerticle extends AbstractVerticle {
 		router.get("/api/health/liveness").handler(healthCheckHandler);
 		router.get("/api/publish").handler(this::publishData);
 
-		server = vertx.createHttpServer().requestHandler(router::accept).listen(config().getInteger("http.port", 8080),
-				ar -> {
+		HttpServer server = vertx.createHttpServer().requestHandler(router::accept)
+				.listen(config().getInteger("http.port", 8080), ar -> {
 					if (ar.succeeded()) {
 						log.info(String.format(REST_STATUS, OK));
 						restOnline = ar.succeeded();
@@ -55,7 +53,7 @@ public class RESTServiceVerticle extends AbstractVerticle {
 	 */
 	private void publishData(RoutingContext rc) {
 		if (restOnline != true) {
-			this.error(rc, NOT_OK);
+			rc.response().setStatusCode(400).putHeader(CONTENT_TYPE, "text/plain").end(NOT_OK);
 			return;
 		}
 
@@ -67,8 +65,8 @@ public class RESTServiceVerticle extends AbstractVerticle {
 			messagePayload.put("host", rc.request().host());
 			messagePayload.put("body", data);
 
-			vertx.eventBus().send("dataStream", messagePayload);
-			
+			vertx.eventBus().send(CommonConstants.VERTX_EVENTBUS_DATA_ADDRESS, messagePayload);
+
 			log.info("Message delivered to event bus");
 
 			rc.response().setStatusCode(200).putHeader(CONTENT_TYPE, "text/plain").end(OK);
@@ -76,13 +74,9 @@ public class RESTServiceVerticle extends AbstractVerticle {
 		} catch (Exception e1) {
 
 			log.error("Oops", e1);
-			this.error(rc, e1.getMessage());
+			rc.response().setStatusCode(400).putHeader(CONTENT_TYPE, "text/plain").end(e1.getMessage());
 
 		}
-	}
-
-	private void error(RoutingContext rc, String message) {
-		rc.response().setStatusCode(400).putHeader(CONTENT_TYPE, "text/plain").end(message);
 	}
 
 }

@@ -20,9 +20,9 @@
 
 	<properties>
 		<vertx.version>3.4.1</vertx.version>
-		<vertx-maven-plugin.version>1.0.6</vertx-maven-plugin.version>
+		<vertx-maven-plugin.version>1.0.8</vertx-maven-plugin.version>
 
-		<vertx.verticle>io.openshift.booster.bootstrap.BootstraapVerticle</vertx.verticle>
+		<vertx.verticle>io.openshift.booster.bootstrap.BootstrapVerticle</vertx.verticle>
 	</properties>
 
 	<dependencyManagement>
