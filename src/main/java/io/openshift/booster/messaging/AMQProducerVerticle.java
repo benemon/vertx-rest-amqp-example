@@ -71,7 +71,7 @@ public class AMQProducerVerticle extends AbstractVerticle {
 		ServiceDiscovery discovery = ServiceDiscovery.create(vertx);
 
 		discovery.registerServiceImporter(new KubernetesServiceImporter(),
-				new JsonObject().put("namespace", "vertx-demo"));
+				new JsonObject().put("namespace", kubernetesProject));
 
 		// Create the context
 		Hashtable<Object, Object> env = new Hashtable<Object, Object>();
