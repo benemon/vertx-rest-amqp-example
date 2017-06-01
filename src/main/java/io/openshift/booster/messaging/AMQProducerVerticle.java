@@ -22,7 +22,6 @@ import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.servicediscovery.Record;
 import io.vertx.servicediscovery.ServiceDiscovery;
-import io.vertx.servicediscovery.ServiceDiscoveryOptions;
 import io.vertx.servicediscovery.kubernetes.KubernetesServiceImporter;
 
 public class AMQProducerVerticle extends AbstractVerticle {
@@ -93,8 +92,9 @@ public class AMQProducerVerticle extends AbstractVerticle {
 					env.put("topic.liveDataLookup", amqBrokerAddress);
 
 				} else {
-					log.info("Kubernetes service found in the vert.x service registry.");
 					Record brokerRecord = ks.result();
+
+					log.info("Kubernetes service found in the vert.x service registry: " + brokerRecord.toString());
 
 					String brokerHost = brokerRecord.getLocation().getString("host");
 					Integer brokerPort = brokerRecord.getLocation().getInteger("port");
@@ -125,17 +125,17 @@ public class AMQProducerVerticle extends AbstractVerticle {
 		Connection connection = null;
 		Session session = null;
 		MessageProducer messageProducer = null;
-		Destination queue = null;
+		Destination destination = null;
 
 		try {
 
 			factory = (ConnectionFactory) context.lookup("amqBrokerLookup");
-			queue = (Destination) context.lookup("liveDataLookup");
+			destination = (Destination) context.lookup("liveDataLookup");
 			connection = factory.createConnection(amqBrokerUsername, amqBrokerPassword);
 			connection.start();
 
 			session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-			messageProducer = session.createProducer(queue);
+			messageProducer = session.createProducer(destination);
 			TextMessage message = session.createTextMessage(payload.body().encodePrettily());
 			messageProducer.send(message, DELIVERY_MODE, Message.DEFAULT_PRIORITY, Message.DEFAULT_TIME_TO_LIVE);
 
