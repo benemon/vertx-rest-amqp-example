@@ -20,6 +20,7 @@ import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
+import io.vertx.servicediscovery.Record;
 import io.vertx.servicediscovery.ServiceDiscovery;
 import io.vertx.servicediscovery.ServiceDiscoveryOptions;
 import io.vertx.servicediscovery.kubernetes.KubernetesServiceImporter;
@@ -43,8 +44,6 @@ public class AMQProducerVerticle extends AbstractVerticle {
 
 	private static final int DELIVERY_MODE = DeliveryMode.NON_PERSISTENT;
 
-	private Context context;
-
 	public AMQProducerVerticle() {
 		amqBrokerHost = System.getenv(CommonConstants.AMQP_BROKER_HOST_ENV) != null
 				? System.getenv(CommonConstants.AMQP_BROKER_HOST_ENV) : AMQ_DEFAULT_HOST;
@@ -67,24 +66,10 @@ public class AMQProducerVerticle extends AbstractVerticle {
 	public void start() throws Exception {
 
 		super.start();
-
 		ServiceDiscovery discovery = ServiceDiscovery.create(vertx);
 
 		discovery.registerServiceImporter(new KubernetesServiceImporter(),
 				new JsonObject().put("namespace", kubernetesProject));
-
-		// Create the context
-		Hashtable<Object, Object> env = new Hashtable<Object, Object>();
-		env.put(Context.INITIAL_CONTEXT_FACTORY, "org.apache.qpid.jms.jndi.JmsInitialContextFactory");
-		env.put("connectionfactory.amqBrokerLookup", "amqp://" + amqBrokerHost + ":" + amqBrokerPort);
-		env.put("queue.dataLookup", amqBrokerAddress);
-		env.put("topic.liveDataLookup", amqBrokerAddress);
-
-		try {
-			context = new javax.naming.InitialContext(env);
-		} catch (NamingException e) {
-			log.error("Oops", e);
-		}
 
 		MessageConsumer<JsonObject> ebConsumer = vertx.eventBus()
 				.consumer(CommonConstants.VERTX_EVENTBUS_DATA_ADDRESS_ENV);
@@ -95,20 +80,45 @@ public class AMQProducerVerticle extends AbstractVerticle {
 
 			discovery.getRecord(new JsonObject().put("name", "broker-amq-amqp"), ks -> {
 
+				// Create the context env
+				Hashtable<Object, Object> env = new Hashtable<Object, Object>();
+				env.put(Context.INITIAL_CONTEXT_FACTORY, "org.apache.qpid.jms.jndi.JmsInitialContextFactory");
+
 				if (ks.failed()) {
-					log.error("could not lookup broker service. Falling back on environment variables");
+					log.warn(
+							"Kubernetes service not found in the vert.x service registry. Either configure the Kubernetes service bridge, or assign environment variables for Broker configuration. ");
+
+					env.put("connectionfactory.amqBrokerLookup", "amqp://" + amqBrokerHost + ":" + amqBrokerPort);
+					env.put("queue.dataLookup", amqBrokerAddress);
+					env.put("topic.liveDataLookup", amqBrokerAddress);
+
 				} else {
-					log.info("Found the broker!");
+					log.info("Kubernetes service found in the vert.x service registry.");
+					Record brokerRecord = ks.result();
+
+					String brokerHost = brokerRecord.getLocation().getString("host");
+					Integer brokerPort = brokerRecord.getLocation().getInteger("port");
+
+					env.put("connectionfactory.amqBrokerLookup", "amqp://" + brokerHost + ":" + brokerPort);
+					env.put("queue.dataLookup", amqBrokerAddress);
+					env.put("topic.liveDataLookup", amqBrokerAddress);
+
 				}
 
-				produceMessage(payload);
+				try {
+					// Create the context
+					Context context = new javax.naming.InitialContext(env);
+					produceMessage(payload, context);
+				} catch (NamingException e) {
+					log.error("Oops", e);
+				}
 
 			});
 
 		});
 	}
 
-	private boolean produceMessage(io.vertx.core.eventbus.Message<JsonObject> payload) {
+	private boolean produceMessage(io.vertx.core.eventbus.Message<JsonObject> payload, Context context) {
 		boolean success = false;
 
 		ConnectionFactory factory = null;
