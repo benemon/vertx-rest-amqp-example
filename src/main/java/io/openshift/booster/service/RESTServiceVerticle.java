@@ -65,7 +65,7 @@ public class RESTServiceVerticle extends AbstractVerticle {
 			messagePayload.put("host", rc.request().host());
 			messagePayload.put("body", data);
 
-			vertx.eventBus().send(CommonConstants.VERTX_EVENTBUS_DATA_ADDRESS, messagePayload);
+			vertx.eventBus().send(CommonConstants.VERTX_EVENTBUS_DATA_ADDRESS_ENV, messagePayload);
 
 			log.info("Message delivered to event bus");
 

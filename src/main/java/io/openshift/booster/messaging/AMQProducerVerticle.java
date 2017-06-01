@@ -20,6 +20,9 @@ import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
+import io.vertx.servicediscovery.ServiceDiscovery;
+import io.vertx.servicediscovery.ServiceDiscoveryOptions;
+import io.vertx.servicediscovery.kubernetes.KubernetesServiceImporter;
 
 public class AMQProducerVerticle extends AbstractVerticle {
 	private static final Logger log = LoggerFactory.getLogger("AMQProducerVerticle");
@@ -35,6 +38,8 @@ public class AMQProducerVerticle extends AbstractVerticle {
 	private String amqBrokerUsername;
 	private String amqBrokerPassword;
 	private String amqBrokerAddress;
+
+	private String kubernetesProject;
 
 	private static final int DELIVERY_MODE = DeliveryMode.NON_PERSISTENT;
 
@@ -54,12 +59,19 @@ public class AMQProducerVerticle extends AbstractVerticle {
 
 		amqBrokerPassword = System.getenv(CommonConstants.AMQP_BROKER_PASSWORD_ENV);
 
+		kubernetesProject = System.getenv(CommonConstants.KUBERNETES_PROJECT_ENV);
+
 	}
 
 	@Override
 	public void start() throws Exception {
 
 		super.start();
+
+		ServiceDiscovery discovery = ServiceDiscovery.create(vertx);
+
+		discovery.registerServiceImporter(new KubernetesServiceImporter(),
+				new JsonObject().put("namespace", "vertx-demo"));
 
 		// Create the context
 		Hashtable<Object, Object> env = new Hashtable<Object, Object>();
@@ -74,47 +86,67 @@ public class AMQProducerVerticle extends AbstractVerticle {
 			log.error("Oops", e);
 		}
 
-		MessageConsumer<JsonObject> ebConsumer = vertx.eventBus().consumer(CommonConstants.VERTX_EVENTBUS_DATA_ADDRESS);
+		MessageConsumer<JsonObject> ebConsumer = vertx.eventBus()
+				.consumer(CommonConstants.VERTX_EVENTBUS_DATA_ADDRESS_ENV);
 
 		ebConsumer.handler(payload -> {
 
 			log.info("Message received from event bus");
 
-			ConnectionFactory factory = null;
-			Connection connection = null;
-			Session session = null;
-			MessageProducer messageProducer = null;
-			Destination queue = null;
+			discovery.getRecord(new JsonObject().put("name", "broker-amq-amqp"), ks -> {
 
-			try {
-
-				factory = (ConnectionFactory) context.lookup("amqBrokerLookup");
-				queue = (Destination) context.lookup("liveDataLookup");
-				connection = factory.createConnection(amqBrokerUsername, amqBrokerPassword);
-				connection.start();
-
-				session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-				messageProducer = session.createProducer(queue);
-				TextMessage message = session.createTextMessage(payload.body().encodePrettily());
-				messageProducer.send(message, DELIVERY_MODE, Message.DEFAULT_PRIORITY, Message.DEFAULT_TIME_TO_LIVE);
-
-				log.info(String.format(SENT, message));
-
-			} catch (Exception e1) {
-				log.error("Oops", e1);
-
-			} finally {
-
-				try {
-					messageProducer.close();
-					session.close();
-					connection.close();
-				} catch (JMSException jms) {
-					log.error("Slightly bigger 'oops'", jms);
+				if (ks.failed()) {
+					log.error("could not lookup broker service. Falling back on environment variables");
+				} else {
+					log.info("Found the broker!");
 				}
 
-			}
+				produceMessage(payload);
+
+			});
+
 		});
+	}
+
+	private boolean produceMessage(io.vertx.core.eventbus.Message<JsonObject> payload) {
+		boolean success = false;
+
+		ConnectionFactory factory = null;
+		Connection connection = null;
+		Session session = null;
+		MessageProducer messageProducer = null;
+		Destination queue = null;
+
+		try {
+
+			factory = (ConnectionFactory) context.lookup("amqBrokerLookup");
+			queue = (Destination) context.lookup("liveDataLookup");
+			connection = factory.createConnection(amqBrokerUsername, amqBrokerPassword);
+			connection.start();
+
+			session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+			messageProducer = session.createProducer(queue);
+			TextMessage message = session.createTextMessage(payload.body().encodePrettily());
+			messageProducer.send(message, DELIVERY_MODE, Message.DEFAULT_PRIORITY, Message.DEFAULT_TIME_TO_LIVE);
+
+			log.info(String.format(SENT, message));
+
+		} catch (Exception e1) {
+			log.error("Oops", e1);
+
+		} finally {
+
+			try {
+				messageProducer.close();
+				session.close();
+				connection.close();
+			} catch (JMSException jms) {
+				log.error("Slightly bigger 'oops'", jms);
+			}
+
+		}
+
+		return success;
 	}
 
 }
