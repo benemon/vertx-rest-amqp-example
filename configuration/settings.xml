@@ -8,17 +8,12 @@
 		<profile>
 			<id>build.repos</id>
 			<repositories>
+
 				<repository>
 					<snapshots>
 						<enabled>false</enabled>
 					</snapshots>
-					<id>central</id>
-					<name>red-hat-all</name>
-					<url>http://nexus.default.svc.cluster.local:8081/repository/red-hat-all/</url>
-				</repository>
-				<repository>
-					<snapshots />
-					<id>snapshots</id>
+					<id>local</id>
 					<name>red-hat-all</name>
 					<url>http://nexus.default.svc.cluster.local:8081/repository/red-hat-all/</url>
 				</repository>
@@ -107,18 +102,14 @@
 				</repository>
 
 			</repositories>
+
 			<pluginRepositories>
+
 				<pluginRepository>
 					<snapshots>
 						<enabled>false</enabled>
 					</snapshots>
-					<id>central</id>
-					<name>redhat-all</name>
-					<url>http://nexus.default.svc.cluster.local:8081/repository/red-hat-all/</url>
-				</pluginRepository>
-				<pluginRepository>
-					<snapshots />
-					<id>snapshots</id>
+					<id>local</id>
 					<name>redhat-all</name>
 					<url>http://nexus.default.svc.cluster.local:8081/repository/red-hat-all/</url>
 				</pluginRepository>

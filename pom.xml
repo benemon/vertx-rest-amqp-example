@@ -105,35 +105,29 @@
 
 	</dependencies>
 
-	<profiles>
-		<profile>
-			<id>local</id>
-			<activation>
-				<activeByDefault>true</activeByDefault>
-			</activation>
-			<build>
-				<plugins>
-					<plugin>
-						<groupId>io.fabric8</groupId>
-						<artifactId>vertx-maven-plugin</artifactId>
-						<version>${vertx-maven-plugin.version}</version>
-						<executions>
-							<execution>
-								<id>vmp</id>
-								<goals>
-									<goal>initialize</goal>
-									<goal>package</goal>
-								</goals>
-							</execution>
-						</executions>
-						<configuration>
-							<redeploy>true</redeploy>
-						</configuration>
-					</plugin>
-				</plugins>
-			</build>
-		</profile>
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>io.fabric8</groupId>
+				<artifactId>vertx-maven-plugin</artifactId>
+				<version>${vertx-maven-plugin.version}</version>
+				<executions>
+					<execution>
+						<id>vmp</id>
+						<goals>
+							<goal>initialize</goal>
+							<goal>package</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<redeploy>true</redeploy>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
 
+	<profiles>
 		<profile>
 			<id>openshift</id>
 			<build>
